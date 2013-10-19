@@ -1,0 +1,5 @@
+{
+	"url" : "http://localhost/stats",
+	"proxies" : ["http-in","https-in"],
+	"pollInterval": 1000
+}
