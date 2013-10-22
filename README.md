@@ -31,8 +31,8 @@ The following snippet of configuration will host the statistics on a file socket
 * the `mode` parameter sets the mode of the file socket.  If the relay is running as the same user as haproxy, `mode 777` can be omitted'
 * the `level` parameter limits the commands available from the file socket
 
-	global
-		stats socket /tmp/haproxy mode 777 level operator
+    global
+        stats socket /tmp/haproxy mode 777 level operator
 
 #### Using a webpage
 The following snippet of configuration will tell haproxy to host a webpage the plugin will scrape (you can view the webpage as well)
@@ -41,11 +41,11 @@ The following snippet of configuration will tell haproxy to host a webpage the p
 * `stats auth username:password` tell haproxy to password protect the page with the username and password combination
 * `stats refresh 10` tells haproxy to refresh the webpage every 10s if your browser is viewing it
 
-	defaults
-		stats enable
-		stats uri /stats
-		stats auth username:password
-		stats refresh 10
+    defaults
+        stats enable
+        stats uri /stats
+        stats auth username:password
+        stats refresh 10
 
 Once you make the update, reload your haproxy configuration
 	`sudo service haproxy reload`
