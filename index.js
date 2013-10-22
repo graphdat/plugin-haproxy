@@ -73,7 +73,7 @@ if (!_param.url && !_param.socketPath)
 if (_param.url && _param.url.slice(-4) !== ';csv')
     _param.url += ';csv';
 
-// This this is a URL and we have a name and password, then we need ot add an auth header
+// This this is a URL and we have a name and password, then we need to add an auth header
 if (_param.url && _param.username)
     _httpOptions = { auth: { user: _param.username, pass: _param.password, sendImmediately: true } };
 
@@ -85,15 +85,18 @@ if (_param.proxies)
 {
     _param.proxies.forEach(function(proxy)
     {
+        if (!proxy)
+            return;
+
         var values = proxy.split(',');
         if (values[0] in _proxies)
         {
             console.error('The value %s is defined twice.  Each name is requried to be unique', values[0]);
             process.exit(-1);
         }
-        _proxies[values[0]] = { name: _param.source + '-' + (values[1] || values[0]).trim() }; // if there is an alias use it
+        _proxies[values[0]] = _param.source + '-' + (values[1] || values[0]).trim(); // if there is an alias use it
     });
-    var _filterProxies = true;
+    var _filterProxies = _proxies.length > 0;
 }
 
 // get the natural difference between a and b
@@ -208,7 +211,7 @@ function poll(cb)
             Object.keys(current).forEach(function(proxy)
             {
                 var name = proxy;
-                var alias = (_proxies && _proxies[name] && _proxies[name].name) || _param.source + '-' + proxy;
+                var alias = (_proxies && _proxies[name]) || _param.source + '-' + proxy;
                 var cur = current[name];
                 var prev = _previous[name] || {};
                 var hasPrev = Object.keys(prev) === 0;
