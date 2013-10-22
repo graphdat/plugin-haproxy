@@ -2,19 +2,19 @@
 
 #### Tracks the following metrics for [haproxy](http://haproxy.1wt.eu)
 
-* HAPROXY_REQUESTS_QUEUED - Current Queued Requests
-* HAPROXY_REQUESTS_QUEUE_LIMIT - Current Queued Requests / Queue Limit
-* HAPROXY_REQUESTS_HANDLED - HTTP Requests Received
-* HAPROXY_REQUESTS_ABORTED_BY_CLIENT - Requests aborted by the Client
-* HAPROXY_REQUESTS_ABORTED_BY_SERVER - Requests aborted by the Server
-* HAPROXY_SESSIONS - Current number of Sessions
-* HAPROXY_SESSION_LIMIT - Current Sessions / Session Limit
 * HAPROXY_BYTES_IN - Bytes In
 * HAPROXY_BYTES_OUT - Bytes Out
-* HAPROXY_WARNINGS - Retries + Redispatches
-* HAPROXY_ERRORS - Connection Errors + Request Errors + Response Errors
-* HAPROXY_FAILED_HEALTH_CHECKS - Failed Health Checks
 * HAPROXY_DOWNTIME_SECONDS - The amount of downtime
+* HAPROXY_FAILED_HEALTH_CHECKS - Failed Health Checks
+* HAPROXY_ERRORS - Connection Errors + Request Errors + Response Errors
+* HAPROXY_WARNINGS - Retries + Redispatches
+* HAPROXY_REQUESTS_ABORTED_BY_CLIENT - Requests aborted by the Client
+* HAPROXY_REQUESTS_ABORTED_BY_SERVER - Requests aborted by the Server
+* HAPROXY_REQUESTS_HANDLED - HTTP Requests Received
+* HAPROXY_REQUESTS_QUEUED - Current Queued Requests
+* HAPROXY_REQUESTS_QUEUE_LIMIT - Current Queued Requests / Queue Limit
+* HAPROXY_SESSIONS - Current number of Sessions
+* HAPROXY_SESSION_LIMIT - Current Sessions / Session Limit
 * HAPROXY_1XX_RESPONSES - Number of 1XX Responses
 * HAPROXY_2XX_RESPONSES - Number of 2XX Responses
 * HAPROXY_3XX_RESPONSES - Number of 3XX Responses
