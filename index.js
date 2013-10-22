@@ -96,7 +96,7 @@ if (_param.proxies)
         }
         _proxies[values[0]] = _param.source + '-' + (values[1] || values[0]).trim(); // if there is an alias use it
     });
-    var _filterProxies = _proxies.length > 0;
+    var _filterProxies = Object.keys(_proxies).length > 0;
 }
 
 // get the natural difference between a and b
