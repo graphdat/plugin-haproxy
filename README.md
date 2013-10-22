@@ -1,6 +1,6 @@
 # Haproxy Graphdat Plugin
 
-#### Tracks the following metrics for [haproxy](http://haproxy.1wt.eu)
+## Tracks the following metrics for [haproxy](http://haproxy.1wt.eu)
 
 * HAPROXY_BYTES_IN - Bytes In
 * HAPROXY_BYTES_OUT - Bytes Out
@@ -22,21 +22,29 @@
 * HAPROXY_5XX_RESPONSES - Number of 5XX Responses
 * HAPROXY_OTHER_RESPONSES - Number of all other Responses
 
-#### Pre Reqs
+## Pre Reqs
 
-To get statistics from haproxy, you need to instruct Haproxy where to host the statistics
+To get statistics from haproxy, you need to instruct Haproxy where to host the statistics.  You can use a filesocket or use the webpage option.
 
-The following will host the statistics on a file socket:
-
-	global
-		stats socket /tmp/haproxy level operator
-
-Or Alternatively, you can host a webpage that you can access as well
+#### Using a File socket
+The following snippet of configuration will host the statistics on a file socket.
+* the `mode` parameter sets the mode of the file socket.  If the relay is running as the same user as haproxy, `mode 777` can be omitted'
+* the `level` parameter limits the commands available from the file socket
 
 	global
+		stats socket /tmp/haproxy mode 777 level operator
+
+#### Using a webpage
+The following snippet of configuration will tell haproxy to host a webpage the plugin will scrape (you can view the webpage as well)
+* `stats enable` tell haproxy to enable the webpage
+* `stats uri /stats` tell haproxy to host the webpage at /stats, this needs to be a unique URL not being used in your application.  If your website already has a /stats page, change this values to something else
+* `stats auth username:password` tell haproxy to password protect the page with the username and password combination
+* `stats refresh 10` tells haproxy to refresh the webpage every 10s if your browser is viewing it
+
+	defaults
 		stats enable
 		stats uri /stats
-		stats auth username:secret-password
+		stats auth username:password
 		stats refresh 10
 
 Once you make the update, reload your haproxy configuration
