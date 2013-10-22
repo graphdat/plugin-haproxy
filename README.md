@@ -26,7 +26,14 @@
 
 To get statistics from haproxy, you need to instruct Haproxy where to host the statistics
 
-	defaults
+The following will host the statistics on a file socket:
+
+	global
+		stats socket /tmp/haproxy level operator
+
+Or Alternatively, you can host a webpage that you can access as well
+
+	global
 		stats enable
 		stats uri /stats
 		stats auth username:secret-password
@@ -37,6 +44,8 @@ Once you make the update, reload your haproxy configuration
 
 ### Installation & Configuration
 
-* The URL endpoint of the haproxy statistics module, the default is `http://127.0.0.1/stats`.
-* If the endpoint is password protected, what `username` and `password` should the plugin use to make the call
 * The `source` to prefix the display in the legend for the haproxy data.  It will default to the hostname of the server.
+* The Socket or URL endpoint of the haproxy statistics module is required.
+  * The default socket is hosted at /tmp/haproxy
+  * The default webpage is hosted at `http://127.0.0.1/stats`.
+* If the webpage is password protected, what `username` and `password` should the plugin use to make the call
