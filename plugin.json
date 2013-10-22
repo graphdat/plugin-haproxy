@@ -40,9 +40,16 @@
             "type" : "string"
         },
         {
+            "title" : "Socket path",
+            "name" : "socketPath",
+            "description" : "The Haproxy statistics Socket path.  Socket or URL is required",
+            "type" : "string",
+            "default" : "/tmp/haproxy"
+        },
+        {
             "title" : "Statistics URL",
             "name" : "url",
-            "description" : "The URL endpoint of where the haproxy statistics are hosted.",
+            "description" : "The URL endpoint of where the haproxy statistics are hosted.  Socket or URL is required",
             "type" : "string",
             "default" : "http://localhost/stats;csv"
         },
