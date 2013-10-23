@@ -111,7 +111,7 @@ function diff(a, b)
 // call the socket object to get the statistics
 function getStatsFromSocket(cb)
 {
-    var client = _net.connect(_param.socketPath.socketPath, function (err)
+    var client = _net.connect(_param.socketPath, function (err)
     {
         if (err)
             return cb(err);
@@ -125,6 +125,11 @@ function getStatsFromSocket(cb)
         // the data comes as a buffer so make it a string
         data = data.toString();
         cb(null, data);
+    });
+    client.on('error', function(err)
+    {
+        client.end();
+        cb(err);
     });
 }
 
