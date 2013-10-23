@@ -214,7 +214,7 @@ function poll(cb)
                 var alias = (_proxies && _proxies[name]) || _param.source + '-' + proxy;
                 var cur = current[name];
                 var prev = _previous[name] || {};
-                var hasPrev = Object.keys(prev) === 0;
+                var hasPrev = Object.keys(prev) !== 0;
 
                 var queueLimit = (cur.qcur && cur.qlimit) ? (cur.qcur/cur.qlimit) : 0.0;
                 var sessionLimit = (cur.scur && cur.slim) ? (cur.scur/cur.slim) : 0.0;
