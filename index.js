@@ -3,6 +3,7 @@ var _os = require('os');
 var _param = require('./param.json');
 var _request = require('request');
 var _url = require('url');
+var _tools = require('graphdat-plugin-tools');
 
 var _haproxyKeys = [
     'pxname',           // proxy name (ex. http-in)
