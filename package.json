@@ -6,6 +6,7 @@
 	"main": "index.js",
 	"devDependencies": {},
 	"dependencies": {
+		"graphdat-plugin-tools" : "0.0.1",
 		"request" : "2.27.x"
 	},
 	"repository": {
