@@ -2,8 +2,8 @@ var _net = require('net');
 var _os = require('os');
 var _param = require('./param.json');
 var _request = require('request');
-var _url = require('url');
 var _tools = require('graphdat-plugin-tools');
+var _url = require('url');
 
 var _haproxyKeys = [
     'pxname',           // proxy name (ex. http-in)
@@ -59,9 +59,11 @@ var _haproxyKeys = [
     'srv_abrt'          // number of data transfers aborted by the server
 ];
 
+var _getStats = (_param.socketPath) ? getStatsFromSocket : getStatsFromEndpoint; // how to we poll stats
 var _httpOptions; // username/password options for the URL
-var _previous = {}; // remember the previous poll data so we can provide proper counts
+var _previous; // remember the previous poll data so we can provide proper counts
 var _proxies = {}; // the filters on the haproxy data
+var _ts; // the last time we polled
 
 // At a minimum, we need a way to contact Haproxy
 if (!_param.url && !_param.socketPath)
@@ -101,12 +103,12 @@ if (_param.proxies)
 }
 
 // get the natural difference between a and b
-function diff(a, b)
+function diff(a, b, delta)
 {
     if (a == null || b == null)
         return 0;
     else
-        return Math.max(a - b, 0);
+        return Math.max(a - b, 0) / (delta || 1);
 }
 
 // call the socket object to get the statistics
@@ -202,18 +204,32 @@ function processStats(body, cb)
 // get the stats, format the output and send to stdout
 function poll(cb)
 {
-    var getStats = (_param.socketPath) ? getStatsFromSocket : getStatsFromEndpoint;
-    getStats(function(err, stats)
+    _getStats(function(err, stats)
     {
         if (err)
             return console.error(err);
 
         processStats(stats, function(err, current)
         {
+            // if we hit an error, log it and try again
             if (err)
-                return console.error(err);
+            {
+                _previous = null;
+                _ts = null;
+                console.error(err);
+                return setTimeout(poll, _param.pollInterval);
+            }
+
+            // if these are the first stats, skip it so we do not return invalid data
+            if (!_previous)
+            {
+                _previous = current;
+                _ts = Date.now();
+                return setTimeout(poll, _param.pollInterval);
+            }
 
             // go through each of the proxies the user cares about
+            var delta = (Date.now() - _ts)/1000;
             Object.keys(current).forEach(function(proxy)
             {
                 var name = proxy;
@@ -224,40 +240,40 @@ function poll(cb)
 
                 var queueLimit = (cur.qcur && cur.qlimit) ? (cur.qcur/cur.qlimit) : 0.0;
                 var sessionLimit = (cur.scur && cur.slim) ? (cur.scur/cur.slim) : 0.0;
-                var warnings = (hasPrev) ? diff(cur.wretr + cur.wredis, prev.wretr + prev.wredis) : 0;
-                var errors = (hasPrev) ? diff(cur.ereq + cur.econ + cur.eresp, prev.ereq + prev.econ + prev.eresp) : 0;
-                var downtime = (hasPrev) ? diff(cur.downtime, prev.downtime) * 1000 : 0;
+                var warnings = diff(cur.wretr + cur.wredis, prev.wretr + prev.wredis) / delta;
+                var errors = diff(cur.ereq + cur.econ + cur.eresp, prev.ereq + prev.econ + prev.eresp) / delta;
+                var downtime = diff(cur.downtime, prev.downtime) * 1000 / delta;
 
                 console.log('HAPROXY_REQUESTS_QUEUED %d %s', cur.qcur, alias);
                 console.log('HAPROXY_REQUESTS_QUEUE_LIMIT %d %s', queueLimit, alias); // this is a percentage
 
-                console.log('HAPROXY_REQUESTS_HANDLED %d %s', diff(cur.req_tot, prev.req_tot), alias);
-                console.log('HAPROXY_REQUESTS_ABORTED_BY_CLIENT %d %s', diff(cur.cli_abrt, prev.cli_abrt), alias);
-                console.log('HAPROXY_REQUESTS_ABORTED_BY_SERVER %d %s', diff(cur.srv_abrt, prev.srv_abrt), alias);
+                console.log('HAPROXY_REQUESTS_HANDLED %d %s', diff(cur.req_tot, prev.req_tot, delta), alias);
+                console.log('HAPROXY_REQUESTS_ABORTED_BY_CLIENT %d %s', diff(cur.cli_abrt, prev.cli_abrt, delta), alias);
+                console.log('HAPROXY_REQUESTS_ABORTED_BY_SERVER %d %s', diff(cur.srv_abrt, prev.srv_abrt, delta), alias);
 
                 console.log('HAPROXY_SESSIONS %d %s', cur.scur, alias);
                 console.log('HAPROXY_SESSION_LIMIT %d %s', sessionLimit, alias);  // this is a percentage
 
-                console.log('HAPROXY_BYTES_IN %d %s', diff(cur.bin, prev.bin), alias);
-                console.log('HAPROXY_BYTES_OUT %d %s', diff(cur.bout, prev.bout), alias);
+                console.log('HAPROXY_BYTES_IN %d %s', diff(cur.bin, prev.bin, delta), alias);
+                console.log('HAPROXY_BYTES_OUT %d %s', diff(cur.bout, prev.bout, delta), alias);
 
                 console.log('HAPROXY_WARNINGS %d %s', warnings, alias);
                 console.log('HAPROXY_ERRORS %d %s', errors, alias);
-                console.log('HAPROXY_FAILED_HEALTH_CHECKS %d %s', diff(cur.chkfail, prev.chkfail), alias);
+                console.log('HAPROXY_FAILED_HEALTH_CHECKS %d %s', diff(cur.chkfail, prev.chkfail, delta), alias);
                 console.log('HAPROXY_DOWNTIME_SECONDS %d %s', downtime, alias);
 
-                console.log('HAPROXY_1XX_RESPONSES %d %s', diff(cur.hrsp_1xx, prev.hrsp_1xx), alias);
-                console.log('HAPROXY_2XX_RESPONSES %d %s', diff(cur.hrsp_2xx, prev.hrsp_2xx), alias);
-                console.log('HAPROXY_3XX_RESPONSES %d %s', diff(cur.hrsp_3xx, prev.hrsp_3xx), alias);
-                console.log('HAPROXY_4XX_RESPONSES %d %s', diff(cur.hrsp_4xx, prev.hrsp_4xx), alias);
-                console.log('HAPROXY_5XX_RESPONSES %d %s', diff(cur.hrsp_5xx, prev.hrsp_5xx), alias);
-                console.log('HAPROXY_OTHER_RESPONSES %d %s', diff(cur.hrsp_other, prev.hrsp_other), alias);
+                console.log('HAPROXY_1XX_RESPONSES %d %s', diff(cur.hrsp_1xx, prev.hrsp_1xx, delta), alias);
+                console.log('HAPROXY_2XX_RESPONSES %d %s', diff(cur.hrsp_2xx, prev.hrsp_2xx, delta), alias);
+                console.log('HAPROXY_3XX_RESPONSES %d %s', diff(cur.hrsp_3xx, prev.hrsp_3xx, delta), alias);
+                console.log('HAPROXY_4XX_RESPONSES %d %s', diff(cur.hrsp_4xx, prev.hrsp_4xx, delta), alias);
+                console.log('HAPROXY_5XX_RESPONSES %d %s', diff(cur.hrsp_5xx, prev.hrsp_5xx, delta), alias);
+                console.log('HAPROXY_OTHER_RESPONSES %d %s', diff(cur.hrsp_other, prev.hrsp_other, delta), alias);
             });
 
             _previous = current;
+            _ts = Date.now();
+             setTimeout(poll, _param.pollInterval);
         });
     });
-
-    setTimeout(poll, _param.pollInterval);
 }
 poll();
