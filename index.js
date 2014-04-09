@@ -107,8 +107,9 @@ function diff(a, b, delta)
 {
     if (a == null || b == null)
         return 0;
-    else
-        return Math.max(a - b, 0) / (delta || 1);
+
+    var value = Math.max(a - b, 0) / (delta || 1);
+    return Math.round(value);
 }
 
 // call the socket object to get the statistics
