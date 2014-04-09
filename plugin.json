@@ -73,6 +73,13 @@
             "items" : {
                 "type" : "string"
             }
+        },
+        {
+          "title": "Poll Seconds",
+          "name": "pollSeconds",
+          "description": "How often should the plugin poll the Haproxy endpoint",
+          "type" : "string",
+          "default" : 1
         }
     ]
 }

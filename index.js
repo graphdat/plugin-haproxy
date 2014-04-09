@@ -61,8 +61,10 @@ var _haproxyKeys = [
 
 var _getStats = (_param.socketPath) ? getStatsFromSocket : getStatsFromEndpoint; // how to we poll stats
 var _httpOptions; // username/password options for the URL
+var _pollInterval; // how often do we poll haproxy
 var _previous; // remember the previous poll data so we can provide proper counts
 var _proxies = {}; // the filters on the haproxy data
+var _source; // what name do we show in the legend;
 var _ts; // the last time we polled
 
 // At a minimum, we need a way to contact Haproxy
@@ -81,7 +83,12 @@ if (_param.url && _param.username)
     _httpOptions = { auth: { user: _param.username, pass: _param.password, sendImmediately: true } };
 
 // If we do not have a source, we prefix everything with the servers hostname
-_param.source = (_param.source || _os.hostname()).trim();
+_source = (_param.source || _os.hostname()).trim();
+
+// How often do we poll the endpoint
+_pollInterval = (_param.pollSeconds && parseFloat(_param.pollSeconds) * 1000) ||
+                (_param.pollInterval) ||
+                1000;
 
 // if we have a filter, process it
 if (_param.proxies)
@@ -97,7 +104,7 @@ if (_param.proxies)
             console.error('The value %s is defined twice.  Each name is requried to be unique', values[0]);
             process.exit(-1);
         }
-        _proxies[values[0]] = _param.source + '-' + (values[1] || values[0]).trim(); // if there is an alias use it
+        _proxies[values[0]] = _source + '-' + (values[1] || values[0]).trim(); // if there is an alias use it
     });
     var _filterProxies = Object.keys(_proxies).length > 0;
 }
@@ -218,7 +225,7 @@ function poll(cb)
                 _previous = null;
                 _ts = null;
                 console.error(err);
-                return setTimeout(poll, _param.pollInterval);
+                return setTimeout(poll, _pollInterval);
             }
 
             // if these are the first stats, skip it so we do not return invalid data
@@ -226,7 +233,7 @@ function poll(cb)
             {
                 _previous = current;
                 _ts = Date.now();
-                return setTimeout(poll, _param.pollInterval);
+                return setTimeout(poll, _pollInterval);
             }
 
             // go through each of the proxies the user cares about
@@ -234,7 +241,7 @@ function poll(cb)
             Object.keys(current).forEach(function(proxy)
             {
                 var name = proxy;
-                var alias = (_proxies && _proxies[name]) || _param.source + '-' + proxy;
+                var alias = (_proxies && _proxies[name]) || _source + '-' + proxy;
                 var cur = current[name];
                 var prev = _previous[name] || {};
                 var hasPrev = Object.keys(prev).length !== 0;
@@ -273,7 +280,7 @@ function poll(cb)
 
             _previous = current;
             _ts = Date.now();
-             setTimeout(poll, _param.pollInterval);
+             setTimeout(poll, _pollInterval);
         });
     });
 }
