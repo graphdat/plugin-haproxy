@@ -122,6 +122,9 @@ function diff(a, b, delta)
 // call the socket object to get the statistics
 function getStatsFromSocket(cb)
 {
+    var error;
+    var response = '';
+
     var client = _net.connect(_param.socketPath, function (err)
     {
         if (err)
@@ -129,18 +132,19 @@ function getStatsFromSocket(cb)
         else
             client.end("show stat\n");
     });
-    client.on('data', function(data)
-    {
-        client.end();
-
-        // the data comes as a buffer so make it a string
-        data = data.toString();
-        cb(null, data);
-    });
     client.on('error', function(err)
     {
-        client.end();
-        cb(err);
+        error = err;
+    });
+    client.on('data', function(data)
+    {
+        response += data.toString();
+    });
+    client.on('end', function() {
+        if (error)
+            return cb(error)
+        else
+            return cb(null, response);
     });
 }
 
@@ -280,7 +284,7 @@ function poll(cb)
 
             _previous = current;
             _ts = Date.now();
-             setTimeout(poll, _pollInterval);
+            setTimeout(poll, _pollInterval);
         });
     });
 }
