@@ -112,7 +112,7 @@ if (_param.proxies)
 // get the natural difference between a and b
 function diff(a, b, delta)
 {
-    if (a == null || b == null)
+    if (a == null || b == null || delta == null)
         return 0;
 
     var value = Math.max(a - b, 0) / (delta || 1);
