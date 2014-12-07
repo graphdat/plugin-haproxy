@@ -1,32 +1,21 @@
-# Haproxy Graphdat Plugin
+Boundary HAProxy Plugin
+-----------------------
 
-## Tracks the following metrics for [haproxy](http://haproxy.1wt.eu)
+Collects statistics from an HAProxy instance. To get statistics from HAProxy instance, you need to instruct HAProxy where to host the statistics. Either a filesocket or webpage can be specified.
 
-* HAPROXY_BYTES_IN - Bytes In
-* HAPROXY_BYTES_OUT - Bytes Out
-* HAPROXY_DOWNTIME_SECONDS - The amount of downtime
-* HAPROXY_FAILED_HEALTH_CHECKS - Failed Health Checks
-* HAPROXY_ERRORS - Connection Errors + Request Errors + Response Errors
-* HAPROXY_WARNINGS - Retries + Redispatches
-* HAPROXY_REQUESTS_ABORTED_BY_CLIENT - Requests aborted by the Client
-* HAPROXY_REQUESTS_ABORTED_BY_SERVER - Requests aborted by the Server
-* HAPROXY_REQUESTS_HANDLED - HTTP Requests Received
-* HAPROXY_REQUESTS_QUEUED - Current Queued Requests
-* HAPROXY_REQUESTS_QUEUE_LIMIT - Current Queued Requests / Queue Limit
-* HAPROXY_SESSIONS - Current number of Sessions
-* HAPROXY_SESSION_LIMIT - Current Sessions / Session Limit
-* HAPROXY_1XX_RESPONSES - Number of 1XX Responses
-* HAPROXY_2XX_RESPONSES - Number of 2XX Responses
-* HAPROXY_3XX_RESPONSES - Number of 3XX Responses
-* HAPROXY_4XX_RESPONSES - Number of 4XX Responses
-* HAPROXY_5XX_RESPONSES - Number of 5XX Responses
-* HAPROXY_OTHER_RESPONSES - Number of all other Responses
+### Platforms
+- Windows
+- Linux
+- OS X
+- SmartOS
 
-## Pre Reqs
+### Prerequisites
+- node version 0.8.0 or later
 
-To get statistics from haproxy, you need to instruct Haproxy where to host the statistics.  You can use a filesocket or use the webpage option.
+### Plugin Setup
+The plugin requires either a file socket or a web page to collect HAProxy statistics. The sections below describe configuration for each.
 
-#### Using a File socket
+#### Using a File Socket
 The following snippet of configuration will host the statistics on a file socket.
 * the `mode` parameter sets the mode of the file socket.  If the relay is running as the same user as haproxy, `mode 777` can be omitted'
 * the `level` parameter limits the commands available from the file socket
@@ -34,7 +23,7 @@ The following snippet of configuration will host the statistics on a file socket
     global
         stats socket /tmp/haproxy mode 777 level operator
 
-#### Using a webpage
+#### Using a Web Page
 The following snippet of configuration will tell haproxy to host a webpage the plugin will scrape (you can view the webpage as well)
 * `stats enable` tell haproxy to enable the webpage
 * `stats uri /stats` tell haproxy to host the webpage at /stats, this needs to be a unique URL not being used in your application.  If your website already has a /stats page, change this values to something else
@@ -50,10 +39,40 @@ The following snippet of configuration will tell haproxy to host a webpage the p
 Once you make the update, reload your haproxy configuration
 	`sudo service haproxy reload`
 
-### Installation & Configuration
+### Plugin Configuration Fields
+|Field Name    |Description                                                                                             |
+|:-------------|:-------------------------------------------------------------------------------------------------------|
+|Source        |The Source to display in the legend for the haproxy data.  It will default to the hostname of the server|
+|Socket path   |The Haproxy statistics Socket path.  Socket or URL is required                                          |
+|Statistics URL|The URL endpoint of where the haproxy statistics are hosted.  Socket or URL is required                 |
+|Username      |If the endpoint is password protected, what username should graphdat use when calling it.               |
+|Password      |If the endpoint is password protected, what password should graphdat use when calling it.               |
+|Filter        |Which Server groups would you like to view                                                              |
+|Poll Seconds  |How often should the plugin poll the Haproxy endpoint                                                   |
 
-* The `source` to prefix the display in the legend for the haproxy data.  It will default to the hostname of the server.
-* The Socket or URL endpoint of the haproxy statistics module is required.
-  * The default socket is hosted at /tmp/haproxy
-  * The default webpage is hosted at `http://127.0.0.1/stats`.
-* If the webpage is password protected, what `username` and `password` should the plugin use to make the call
+### Metrics Collected
+
+Tracks the following metrics for [haproxy](http://www.haproxy.org)
+
+|Metric Name                 |Description                                         |
+|:---------------------------|:---------------------------------------------------|
+|Haproxy Queued Requests     | current queued requests                            |
+|Haproxy Queue Limit         |queue Limit                                         |
+|Haproxy Handled Requests    |total number of HTTP requests handled               |
+|Haproxy Client Aborts       |number of data transfers aborted by the client      |
+|Haproxy Server aborts       |number of data transfers aborted by the server      |
+|Haproxy Current Sessions    |current sessions                                    |
+|Haproxy Session Limit       |session limit                                       |
+|Haproxy Bytes In            |bytes in                                            |
+|Haproxy Bytes Out           |bytes out                                           |
+|Haproxy Warnings            |retries + redispatched                              |
+|Haproxy Errors              |request errors + connection errors + response errors|
+|Haproxy Failed Health Checks|the number of failed health checks                  |
+|Haproxy Downtime            |the number of seconds haproxy is down               |
+|Haproxy 1XX Resp            |The number of 1XX HTTP responses                    |
+|Haproxy 2XX Resp            |the number of 2XX HTTP responses                    |
+|Haproxy 3XX Resp            |the number of 3XX HTTP responses                    |
+|Haproxy 4XX Resp            |the number of 4XX HTTP responses                    |
+|Haproxy 5XX Resp            |the  number of 5XX HTTP responses                   |
+|Haproxy Other Resp          |http responses with other codes (protocol error)    |
+
