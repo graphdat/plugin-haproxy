@@ -11,6 +11,7 @@ Collects statistics from an HAProxy instance. To get statistics from HAProxy ins
 
 ### Prerequisites
 - node version 0.8.0 or later
+- npm version 1.4.21 or later
 
 ### Plugin Setup
 The plugin requires either a file socket or a web page to collect HAProxy statistics. The sections below describe configuration for each.
