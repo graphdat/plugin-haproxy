@@ -3,17 +3,20 @@ Boundary HAProxy Plugin
 
 Collects statistics from an HAProxy instance. To get statistics from HAProxy instance, you need to instruct HAProxy where to host the statistics. Either a filesocket or webpage can be specified.
 
-### Platforms
-- Windows
-- Linux
-- OS X
-- SmartOS
-
 ### Prerequisites
-- node version 0.8.0 or later
-- npm version 1.4.21 or later
+
+|     OS    | Linux | Windows | SmartOS | OS X |
+|:----------|:-----:|:-------:|:-------:|:----:|
+| Supported |   v   |    v    |    v    |  v   |
+
+|  Runtime | node.js | Python | Java |
+|:---------|:-------:|:------:|:----:|
+| Required |    +    |        |      |
+
+- [How to install node.js?](https://help.boundary.com/hc/articles/202360701)
 
 ### Plugin Setup
+
 The plugin requires either a file socket or a web page to collect HAProxy statistics. The sections below describe configuration for each.
 
 #### Using a File Socket
@@ -76,4 +79,3 @@ Tracks the following metrics for [haproxy](http://www.haproxy.org)
 |Haproxy 4XX Resp            |the number of 4XX HTTP responses                    |
 |Haproxy 5XX Resp            |the  number of 5XX HTTP responses                   |
 |Haproxy Other Resp          |http responses with other codes (protocol error)    |
-
