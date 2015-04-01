@@ -6,10 +6,10 @@ local boundary = require('boundary')
 local io       = require('io')
 local os       = require('os')
 local _url     = require('_url')
-require('_strings')
 
 
 local __pgk        = "BOUNDARY HAPROXY"
+local __ver        = "version 1.0"
 local _previous    = {}
 local _proxies     = {}
 local url          = "http://localhost/stats;csv"
@@ -108,7 +108,7 @@ end
 
 
 function berror(err)
-  if err then process.stderr:write(string.format("%s ERROR: %s", __pgk, tostring(err))) return err end
+  if err then print(string.format("_bevent:%s : %s ERROR|t:error|s:%s|tags:haproxy,lua,plugin|m:%s", __pgk, __ver, source, tostring(err))) return err end
 end
 
 --- do a http(s) request
@@ -231,7 +231,7 @@ function printStats(current)
 
 end
 
-print("_bevent:HAPROXY plugin up : version 1.0|t:info|tags:haproxy,lua, plugin")
+print("_bevent:HAPROXY plugin : version 1.0 UP|t:info|tags:haproxy,lua,plugin")
 
 timer.setInterval(pollInterval, function ()
 
