@@ -232,7 +232,7 @@ function printStats(current)
 
 end
 
-print("_bevent:HAPROXY plugin : version 1.0 UP|t:info|tags:haproxy,lua,plugin")
+print(string.format("_bevent:%s : %s UP|t:info|tags:apache, plugin", __pgk, __ver))
 
 timer.setInterval(pollInterval, function ()
 
