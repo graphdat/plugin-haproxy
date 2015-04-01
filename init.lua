@@ -6,6 +6,7 @@ local boundary = require('boundary')
 local io       = require('io')
 local os       = require('os')
 local _url     = require('_url')
+local String   = require('_strings')
 
 
 local __pgk        = "BOUNDARY HAPROXY"
