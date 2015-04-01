@@ -92,7 +92,7 @@ function trim(s)
 end
 
 if (boundary.param ~= nil) then
-  pollInterval       = boundary.param.pollSeconds or pollInterval
+  pollInterval       = boundary.param.pollSeconds and boundary.param.pollSeconds*1000 or pollInterval
   url                = (boundary.param.url or url) .. ";csv"
   username           = boundary.param.username
   password           = boundary.param.password
