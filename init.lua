@@ -13,8 +13,8 @@ local __pgk        = "BOUNDARY HAPROXY"
 local __ver        = "version 1.0"
 local _previous    = {}
 local _proxies     = {}
-local url          = "http://localhost/stats;csv"
-local pollInterval = 1000
+local url          = "http://localhost/stats"
+local pollInterval = 500
 local source, username, password, _ts
 local _haproxyKeys = {
     'pxname',           -- proxy name (ex. http-in)
@@ -92,7 +92,7 @@ function trim(s)
 end
 
 if (boundary.param ~= nil) then
-  pollInterval       = boundary.param.pollSeconds and boundary.param.pollSeconds*1000 or pollInterval
+  pollInterval       = boundary.param.pollSeconds and boundary.param.pollSeconds*500 or pollInterval
   url                = (boundary.param.url or url) .. ";csv"
   username           = boundary.param.username
   password           = boundary.param.password
@@ -243,7 +243,4 @@ timer.setInterval(pollInterval, function ()
   end)
 
 end)
-
-
-
 

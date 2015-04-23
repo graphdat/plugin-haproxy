@@ -1,5 +1,5 @@
-Boundary HAProxy Plugin
------------------------
+# Boundary HAProxy Plugin
+
 
 Collects statistics from an HAProxy instance. To get statistics from HAProxy instance, you need to instruct HAProxy where to host the statistics. Either a filesocket or webpage can be specified.
 
@@ -9,8 +9,10 @@ Collects statistics from an HAProxy instance. To get statistics from HAProxy ins
 |:----------|:-----:|:-------:|:-------:|:----:|
 | Supported |   v   |    v    |    v    |  v   |
 
-#### For Boundary Meter V4.0
-(to update/download - curl -fsS -d '{"token":"api.<Your API Key Here>"}' -H 'Content-Type: application/json' https://meter.boundary.com/setup_meter > setup_meter.sh && chmod +x setup_meter.sh && ./setup_meter.sh)
+#### Boundary Meter Versions V4.0 Or Later
+
+- To install new meter go to Settings->Installation or [see instructons|https://help.boundary.com/hc/en-us/sections/200634331-Installation]. 
+- To upgrade the meter to the latest version - [see instructons|https://help.boundary.com/hc/en-us/articles/201573102-Upgrading-the-Boundary-Meter].
 
 |  Runtime | node.js | Python | Java |
 |:---------|:-------:|:------:|:----:|
