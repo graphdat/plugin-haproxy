@@ -1,5 +1,5 @@
-Boundary HAProxy Plugin
------------------------
+# Boundary HAProxy Plugin
+
 
 Collects statistics from an HAProxy instance. To get statistics from HAProxy instance, you need to instruct HAProxy where to host the statistics. Either a filesocket or webpage can be specified.
 
@@ -9,6 +9,17 @@ Collects statistics from an HAProxy instance. To get statistics from HAProxy ins
 |:----------|:-----:|:-------:|:-------:|:----:|
 | Supported |   v   |    v    |    v    |  v   |
 
+#### Boundary Meter Versions V4.0 Or Later
+
+- To install new meter go to Settings->Installation or [see instructons|https://help.boundary.com/hc/en-us/sections/200634331-Installation]. 
+- To upgrade the meter to the latest version - [see instructons|https://help.boundary.com/hc/en-us/articles/201573102-Upgrading-the-Boundary-Meter].
+
+|  Runtime | node.js | Python | Java |
+|:---------|:-------:|:------:|:----:|
+| Required |         |        |      |
+
+#### For Boundary Meter less than V4.0
+
 |  Runtime | node.js | Python | Java |
 |:---------|:-------:|:------:|:----:|
 | Required |    +    |        |      |
@@ -17,9 +28,18 @@ Collects statistics from an HAProxy instance. To get statistics from HAProxy ins
 
 ### Plugin Setup
 
+##### For Boundary Meter V4.0
+
+The plugin requires a web page to collect HAProxy statistics. The sections below describe configuration for each.
+
+##### For Boundary Meter less than V4.0
+
 The plugin requires either a file socket or a web page to collect HAProxy statistics. The sections below describe configuration for each.
 
 #### Using a File Socket
+
+##### For Boundary Meter less than V4.0
+
 The following snippet of configuration will host the statistics on a file socket.
 * the `mode` parameter sets the mode of the file socket.  If the relay is running as the same user as haproxy, `mode 777` can be omitted'
 * the `level` parameter limits the commands available from the file socket
@@ -28,6 +48,9 @@ The following snippet of configuration will host the statistics on a file socket
         stats socket /tmp/haproxy mode 777 level operator
 
 #### Using a Web Page
+
+##### For all supported Boundary Meter versions
+
 The following snippet of configuration will tell haproxy to host a webpage the plugin will scrape (you can view the webpage as well)
 * `stats enable` tell haproxy to enable the webpage
 * `stats uri /stats` tell haproxy to host the webpage at /stats, this needs to be a unique URL not being used in your application.  If your website already has a /stats page, change this values to something else
@@ -44,15 +67,16 @@ Once you make the update, reload your haproxy configuration
 	`sudo service haproxy reload`
 
 ### Plugin Configuration Fields
-|Field Name    |Description                                                                                             |
-|:-------------|:-------------------------------------------------------------------------------------------------------|
-|Source        |The Source to display in the legend for the haproxy data.  It will default to the hostname of the server|
-|Socket path   |The Haproxy statistics Socket path.  Socket or URL is required                                          |
-|Statistics URL|The URL endpoint of where the haproxy statistics are hosted.  Socket or URL is required                 |
-|Username      |If the endpoint is password protected, what username should graphdat use when calling it.               |
-|Password      |If the endpoint is password protected, what password should graphdat use when calling it.               |
-|Filter        |Which Server groups would you like to view                                                              |
-|Poll Seconds  |How often should the plugin poll the Haproxy endpoint                                                   |
+
+|Field Name    |JS |LUA|Description                                                                                             |
+|:-------------|:--|:--|:---------------------------------------------------------------------------------------------------|
+|Source        | X | X |The Source to display in the legend for the haproxy data.  It will default to the hostname of the server|
+|Socket path   | X |   |The Haproxy statistics Socket path.  Socket or URL is required                                          |
+|Statistics URL| X | X |The URL endpoint of where the haproxy statistics are hosted.  Socket or URL is required                 |
+|Username      | X | X |If the endpoint is password protected, what username should graphdat use when calling it.               |
+|Password      | X | X |If the endpoint is password protected, what password should graphdat use when calling it.               |
+|Filter        | X | X |Which Server groups would you like to view                                                              |
+|Poll Seconds  | X | X |How often should the plugin poll the Haproxy endpoint                                                   |
 
 ### Metrics Collected
 

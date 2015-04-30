@@ -2,7 +2,9 @@
     "description" : "Displays important haproxy metrics",
     "icon" : "icon.png",
     "command" : "node index.js",
+    "command_lua" : "boundary-meter init.lua",
     "postExtract" : "npm install",
+    "postExtract_lua" : "",
     "ignore" : "node_modules",
 
     "metrics" : [
