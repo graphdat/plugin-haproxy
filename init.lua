@@ -1,22 +1,31 @@
-local JSON     = require('json')
-local timer    = require('timer')
-local http     = require('http')
-local https    = require('https')
-local boundary = require('boundary')
-local io       = require('io')
-local os       = require('os')
-local _url     = require('_url')
-local String   = require('_strings')
+local framework = require('framework')
+local Plugin = framework.Plugin
+local WebRequestDataSource = framework.WebRequestDataSource
+local Accumulator = framework.Accumulator
+local Cache = framework.Cache
+local url = require('url')
+local auth = framework.util.auth 
+local charAt = framework.string.charAt
+local trim = framework.string.trim
+local split = framework.string.split
+local parseCSV = framework.string.parseCSV
+local os = require('os')
+local indexOf = framework.table.indexOf 
+local pack = framework.util.pack
 
+local params = framework.params
+params.pollInterval = params.pollInterval and tonumber(params.pollInterval)*1000 or 1000
+params.name = 'Boundary Plugin HAProxy'
+params.version = '2.0'
+params.tags = 'haproxy'
 
-local __pgk        = "BOUNDARY HAPROXY"
-local __ver        = "version 1.0"
-local _previous    = {}
-local _proxies     = {}
-local url          = "http://localhost/stats"
-local pollInterval = 500
-local source, username, password, _ts
-local _haproxyKeys = {
+local options = url.parse(params.url .. ';csv')
+options.auth = auth(params.username, params.password)
+options.wait_for_end = false -- Check behaviour of HAProxy based on different versions.
+local cache = Cache:new(function () return Accumulator:new() end)
+local ds = WebRequestDataSource:new(options)
+
+--[[  
     'pxname',           -- proxy name (ex. http-in)
     'svname',           -- service name (FRONTEND or BACKEND_
     'qcur',             -- current queued requests (ex 0)
@@ -68,179 +77,55 @@ local _haproxyKeys = {
     'req_tot',          -- total number of HTTP requests received
     'cli_abrt',         -- number of data transfers aborted by the client
     'srv_abrt'          -- number of data transfers aborted by the server
-}
+]]
 
-function split(str, delimiter)
-    if (delimiter=='') then return false end
-    local pos,array = 0, {}
-    -- for each divider found
-    for st,sp in function() return string.find(str, delimiter, pos, true) end do
-        table.insert(array, string.sub(str, pos, st - 1))
-        pos = sp + 1
-    end
-    table.insert(array, string.sub(str, pos))
-    return array
-end
+local plugin = Plugin:new(params, ds)
+function plugin:onParseValues(data)
+  local result = {}
+  local parsed = parseCSV(data, ',', '#', 1)
+  p(parsed)
+  for i, v in ipairs(parsed) do
+    if v.svname == 'FRONTEND' or v.svname == 'BACKEND' then
+      if not params.proxies or #params.proxies == 0 or indexOf(params.proxies, v.pxname) then
+        
+        local acc = cache:get(v.pxname) 
+        local name = v.pxname
+        local alias = self.source .. '-' .. name
 
-local function isempty(s)
-  return s == nil or s == ''
-end
+        local queue_usage   = (v.qcur and not v.qlimit == "") and (v.qcur / v.qlimit) or 0.0 -- Percentage of queue usage.
+        local sessions_usage = (v.scur and v.slim) and (v.scur / v.slim) or 0.0 -- Percentage of session usage.
+        local warnings     = acc:accumulate('warnings', v.wretr + v.wredis)
+        local errors       = acc:accumulate('errors', v.ereq + v.econ + v.eresp)
+        local downtime     = acc:accumulate('downtime', v.downtime) * 1000 -- downtime in milliseconds
 
-function trim(s)
-  if isempty(s) then return nil end
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
+        result['HAPROXY_REQUESTS_QUEUED'] = pack(v.qcur, nil, alias) -- current queued requests
+        result['HAPROXY_REQUESTS_QUEUE_LIMIT'] = pack(queue_usage, nil, alias) -- queue_usage percentage 
 
-if (boundary.param ~= nil) then
-  pollInterval       = boundary.param.pollSeconds and boundary.param.pollSeconds*500 or pollInterval
-  url                = (boundary.param.url or url) .. ";csv"
-  username           = boundary.param.username
-  password           = boundary.param.password
-  source             = (type(boundary.param.source) == 'string' and boundary.param.source:gsub('%s+', '') ~= '' and boundary.param.source) or
-   io.popen("uname -n"):read('*line')
+        result['HAPROXY_REQUESTS_HANDLED'] = pack(acc:accumulate('req_tot', v.req_tot))
+        result['HAPROXY_REQUESTS_ABORTED_BY_CLIENT'] = pack(acc:accumulate('cli_abrt', v.cli_abrt), nil, alias)
+        result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'] = pack(acc:accumulater('srv_abrt', v.srv_abrt), nil, alias)
 
-  if not boundary.param.proxies == nil then
-    for i, proxy in ipairs(boundary.param.proxies) do
-      local values = split(proxy, ",")
-      _proxies[values[1] or proxy] = source .. '-' .. (values[2] or proxy)
-    end
-  end
-end
+        result['HAPROXY_SESSIONS'] = pack(v.scur, nil, alias)
+        result['HAPROXY_SESSION_LIMIT'] = pack(session_usage, nil, alias)  -- session_usage is a percentage
 
+        result['HAPROXY_BYTES_IN'] = pack(acc:accumulate('bin', v.bin), nil, alias)
+        result['HAPROXY_BYTES_OUT'] = pack(acc:accumulate('bout', v.bout), nil, alias)
 
-function berror(err)
-  if err then print(string.format("_bevent:%s : %s ERROR|t:error|s:%s|tags:haproxy,lua,plugin|m:%s", __pgk, __ver, source, tostring(err))) return err end
-end
+        result['HAPROXY_WARNINGS'] = pack(warnings, nil, alias)
+        result['HAPROXY_ERRORS'] = pack(errors, nil, alias)
+        result['HAPROXY_FAILED_HEALTH_CHECKS'] = pack(acc:accumulate('chkfail', v.chkfail), nil, alias)
+        result['HAPROXY_DOWNTIME_SECONDS'] = pack(downtime, nil, alias)
 
---- do a http(s) request
-local doreq = function(url, cb)
-    local u = _url.parse(url)
-    u.protocol = u.scheme
-    -- reject self signed certs
-    u.rejectUnauthorized = strictSSL
-    if username and password then
-      u.headers = {Authorization = "Basic " .. (string.base64(username..":"..password))}
-    end
-    local output = ""
-    local onSuccess = function(res)
-      res:on("error", function(err)
-        cb("Error while receiving a response: " .. tostring(err), nil)
-      end)
-      res:on("data", function (chunk)
-        output = output .. chunk
-      end)
-      res:on("end", function()
-        if res.statusCode == 401 then return cb("Authentication required, provide user and password", nil) end
-        res:destroy()
-        cb(nil, output)
-      end)
-    end
-    local req = (u.scheme == "https") and https.request(u, onSuccess) or http.request(u, onSuccess)
-    req:on("error", function(err)
-      cb("Error while sending a request: " .. tostring(err), nil)
-    end)
-    req:done()
-end
-
-function charat (str, index)
-  return string.sub(str, index + 1, index + 1)
-end
-
-function parseStats(body)
-    local stats = {}
-    for _, v in ipairs(split(body, "\n")) do
-      if v and not (charat(v, 0) == "#") then
-        local data = split(v, ",")
-        local _name = data[1]
-        local _type = data[2]
-        if _type == 'FRONTEND' or _type == 'BACKEND' then
-          stats[_name] = {}
-          for i, val in ipairs(data) do
-            local k = _haproxyKeys[i]
-            local v = tonumber(val) or trim(val) or 0
-            if k then
-              stats[_name][k] = v
-            end
-          end
-        end
+        result['HAPROXY_1XX_RESPONSES'] = pack(acc:accumulate('hrsp_1xx', v.hrsp_1xx), nil, alias)
+        result['HAPROXY_2XX_RESPONSES'] = pack(acc:accumulate('hrsp_2xx', v.hrsp_2xx), nil, alias)
+        result['HAPROXY_3XX_RESPONSES'] = pack(acc:accumulate('hrsp_3xx', v.hrsp_3xx), nil, alias)
+        result['HAPROXY_4XX_RESPONSES'] = pack(acc:accumulate('hrsp_4xx', v.hrsp_4xx), nil, alias)
+        result['HAPROXY_5XX_RESPONSES'] = pack(acc:accumulate('hrsp_5xx', v.hrsp_5xx), nil, alias)
+        result['HAPROXY_OTHER_RESPONSES'] = pack(acc:accumulate('hrsp_other', v.hrsp_other), nil, alias)
       end
     end
-    return stats
+  end
+  return result
 end
 
-
--- get the natural difference between a and b
-function diff(a, b, delta)
-  if not a or not b or not delta then return 0 end
-  return math.max(a - b, 0) / delta
-end
-
-function table.empty (self)
-    for _, _ in pairs(self) do
-        return false
-    end
-    return true
-end
-
-function printStats(current)
-
-    if table.empty(_previous) then
-      _previous = current
-      _ts = os.time()
-      return
-    end
-
-    local delta = (os.time() - _ts) / 1000
-    for k, v in pairs(current) do
-
-      local name         = k
-      local alias        = (_proxies and _proxies[name]) or (source .. '-' .. name)
-      local cur          = current[name]
-      local prev         = _previous[name] or {}
-      local queueLimit   = (cur.qcur and not cur.qlimit == "") and (cur.qcur/cur.qlimit) or 0.0
-      local sessionLimit = (cur.scur and cur.slim) and (cur.scur/cur.slim) or 0.0
-      local warnings     = diff(cur.wretr + cur.wredis, prev.wretr + prev.wredis) / delta
-      local errors       = diff(cur.ereq + cur.econ + cur.eresp, prev.ereq + prev.econ + prev.eresp) / delta
-      local downtime     = diff(cur.downtime, prev.downtime) * 1000 / delta
-
-      print(string.format('HAPROXY_REQUESTS_QUEUED %d %s', cur.qcur, alias))
-      print(string.format('HAPROXY_REQUESTS_QUEUE_LIMIT %d %s', queueLimit, alias)) -- this is a percentage
-
-      print(string.format('HAPROXY_REQUESTS_HANDLED %d %s', diff(cur.req_tot, prev.req_tot, delta), alias))
-      print(string.format('HAPROXY_REQUESTS_ABORTED_BY_CLIENT %d %s', diff(cur.cli_abrt, prev.cli_abrt, delta), alias))
-      print(string.format('HAPROXY_REQUESTS_ABORTED_BY_SERVER %d %s', diff(cur.srv_abrt, prev.srv_abrt, delta), alias))
-
-      print(string.format('HAPROXY_SESSIONS %d %s', cur.scur, alias))
-      print(string.format('HAPROXY_SESSION_LIMIT %d %s', sessionLimit, alias))  -- this is a percentage
-
-      print(string.format('HAPROXY_BYTES_IN %d %s', diff(cur.bin, prev.bin, delta), alias))
-      print(string.format('HAPROXY_BYTES_OUT %d %s', diff(cur.bout, prev.bout, delta), alias))
-
-      print(string.format('HAPROXY_WARNINGS %d %s', warnings, alias))
-      print(string.format('HAPROXY_ERRORS %d %s', errors, alias))
-      print(string.format('HAPROXY_FAILED_HEALTH_CHECKS %d %s', diff(cur.chkfail, prev.chkfail, delta), alias))
-      print(string.format('HAPROXY_DOWNTIME_SECONDS %d %s', downtime, alias))
-
-      print(string.format('HAPROXY_1XX_RESPONSES %d %s', diff(cur.hrsp_1xx, prev.hrsp_1xx, delta), alias))
-      print(string.format('HAPROXY_2XX_RESPONSES %d %s', diff(cur.hrsp_2xx, prev.hrsp_2xx, delta), alias))
-      print(string.format('HAPROXY_3XX_RESPONSES %d %s', diff(cur.hrsp_3xx, prev.hrsp_3xx, delta), alias))
-      print(string.format('HAPROXY_4XX_RESPONSES %d %s', diff(cur.hrsp_4xx, prev.hrsp_4xx, delta), alias))
-      print(string.format('HAPROXY_5XX_RESPONSES %d %s', diff(cur.hrsp_5xx, prev.hrsp_5xx, delta), alias))
-      print(string.format('HAPROXY_OTHER_RESPONSES %d %s', diff(cur.hrsp_other, prev.hrsp_other, delta), alias))
-    end
-    _previous = current
-
-end
-
-print(string.format("_bevent:%s : %s UP|t:info|tags:apache, plugin", __pgk, __ver))
-
-timer.setInterval(pollInterval, function ()
-
-  doreq(url, function(err, body)
-      if berror(err) then return end
-      printStats(parseStats(body))
-
-  end)
-
-end)
-
+plugin:run()
