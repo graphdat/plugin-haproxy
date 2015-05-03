@@ -83,11 +83,9 @@ local plugin = Plugin:new(params, ds)
 function plugin:onParseValues(data)
   local result = {}
   local parsed = parseCSV(data, ',', '#', 1)
-  p(parsed)
   for i, v in ipairs(parsed) do
     if v.svname == 'FRONTEND' or v.svname == 'BACKEND' then
       if not params.proxies or #params.proxies == 0 or indexOf(params.proxies, v.pxname) then
-        
         local acc = cache:get(v.pxname) 
         local name = v.pxname
         local alias = self.source .. '-' .. name
@@ -101,12 +99,12 @@ function plugin:onParseValues(data)
         result['HAPROXY_REQUESTS_QUEUED'] = pack(v.qcur, nil, alias) -- current queued requests
         result['HAPROXY_REQUESTS_QUEUE_LIMIT'] = pack(queue_usage, nil, alias) -- queue_usage percentage 
 
-        result['HAPROXY_REQUESTS_HANDLED'] = pack(acc:accumulate('req_tot', v.req_tot))
+        result['HAPROXY_REQUESTS_HANDLED'] = pack(acc:accumulate('req_tot', v.req_tot), nil, alias)
         result['HAPROXY_REQUESTS_ABORTED_BY_CLIENT'] = pack(acc:accumulate('cli_abrt', v.cli_abrt), nil, alias)
-        result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'] = pack(acc:accumulater('srv_abrt', v.srv_abrt), nil, alias)
+        result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'] = pack(acc:accumulate('srv_abrt', v.srv_abrt), nil, alias)
 
         result['HAPROXY_SESSIONS'] = pack(v.scur, nil, alias)
-        result['HAPROXY_SESSION_LIMIT'] = pack(session_usage, nil, alias)  -- session_usage is a percentage
+        result['HAPROXY_SESSION_LIMIT'] = pack(sessions_usage, nil, alias)  -- session_usage is a percentage
 
         result['HAPROXY_BYTES_IN'] = pack(acc:accumulate('bin', v.bin), nil, alias)
         result['HAPROXY_BYTES_OUT'] = pack(acc:accumulate('bout', v.bout), nil, alias)
