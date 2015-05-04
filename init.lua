@@ -99,9 +99,9 @@ function plugin:onParseValues(data)
         result['HAPROXY_REQUESTS_QUEUED'] = pack(v.qcur, nil, alias) -- current queued requests
         result['HAPROXY_REQUESTS_QUEUE_LIMIT'] = pack(queue_usage, nil, alias) -- queue_usage percentage 
 
-        result['HAPROXY_REQUESTS_HANDLED'] = pack(acc:accumulate('req_tot', v.req_tot), nil, alias)
-        result['HAPROXY_REQUESTS_ABORTED_BY_CLIENT'] = pack(acc:accumulate('cli_abrt', v.cli_abrt), nil, alias)
-        result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'] = pack(acc:accumulate('srv_abrt', v.srv_abrt), nil, alias)
+        result['HAPROXY_REQUESTS_HANDLED'] = pack(acc:accumulate('req_tot', v.req_tot or 0), nil, alias)
+        result['HAPROXY_REQUESTS_ABORTED_BY_CLIENT'] = pack(acc:accumulate('cli_abrt', v.cli_abrt or 0), nil, alias)
+        result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'] = pack(acc:accumulate('srv_abrt', v.srv_abrt or 0), nil, alias)
 
         result['HAPROXY_SESSIONS'] = pack(v.scur, nil, alias)
         result['HAPROXY_SESSION_LIMIT'] = pack(sessions_usage, nil, alias)  -- session_usage is a percentage
@@ -114,12 +114,12 @@ function plugin:onParseValues(data)
         result['HAPROXY_FAILED_HEALTH_CHECKS'] = pack(acc:accumulate('chkfail', v.chkfail), nil, alias)
         result['HAPROXY_DOWNTIME_SECONDS'] = pack(downtime, nil, alias)
 
-        result['HAPROXY_1XX_RESPONSES'] = pack(acc:accumulate('hrsp_1xx', v.hrsp_1xx), nil, alias)
-        result['HAPROXY_2XX_RESPONSES'] = pack(acc:accumulate('hrsp_2xx', v.hrsp_2xx), nil, alias)
-        result['HAPROXY_3XX_RESPONSES'] = pack(acc:accumulate('hrsp_3xx', v.hrsp_3xx), nil, alias)
-        result['HAPROXY_4XX_RESPONSES'] = pack(acc:accumulate('hrsp_4xx', v.hrsp_4xx), nil, alias)
-        result['HAPROXY_5XX_RESPONSES'] = pack(acc:accumulate('hrsp_5xx', v.hrsp_5xx), nil, alias)
-        result['HAPROXY_OTHER_RESPONSES'] = pack(acc:accumulate('hrsp_other', v.hrsp_other), nil, alias)
+        result['HAPROXY_1XX_RESPONSES'] = pack(acc:accumulate('hrsp_1xx', v.hrsp_1xx or 0), nil, alias)
+        result['HAPROXY_2XX_RESPONSES'] = pack(acc:accumulate('hrsp_2xx', v.hrsp_2xx or 0), nil, alias)
+        result['HAPROXY_3XX_RESPONSES'] = pack(acc:accumulate('hrsp_3xx', v.hrsp_3xx or 0), nil, alias)
+        result['HAPROXY_4XX_RESPONSES'] = pack(acc:accumulate('hrsp_4xx', v.hrsp_4xx or 0), nil, alias)
+        result['HAPROXY_5XX_RESPONSES'] = pack(acc:accumulate('hrsp_5xx', v.hrsp_5xx or 0), nil, alias)
+        result['HAPROXY_OTHER_RESPONSES'] = pack(acc:accumulate('hrsp_other', v.hrsp_other or 0), nil, alias)
       end
     end
   end
