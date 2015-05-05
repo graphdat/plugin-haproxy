@@ -82,14 +82,16 @@ local ds = WebRequestDataSource:new(options)
 local plugin = Plugin:new(params, ds)
 function plugin:onParseValues(data)
   local result = {}
+p(data)
   local parsed = parseCSV(data, ',', '#', 1)
   for i, v in ipairs(parsed) do
     if v.svname == 'FRONTEND' or v.svname == 'BACKEND' then
-      if not params.proxies or #params.proxies == 0 or indexOf(params.proxies, v.pxname) then
+      if not params.proxies or #params.proxies == 0 or (#params.proxies == 1 and params.proxies[1] == "") or indexOf(params.proxies, v.pxname) then
         local acc = cache:get(v.pxname) 
         local name = v.pxname
         local alias = self.source .. '-' .. name
 
+p(alias)
         local queue_usage   = (v.qcur and not v.qlimit == "") and (v.qcur / v.qlimit) or 0.0 -- Percentage of queue usage.
         local sessions_usage = (v.scur and v.slim) and (v.scur / v.slim) or 0.0 -- Percentage of session usage.
         local warnings     = acc:accumulate('warnings', v.wretr + v.wredis)
