@@ -14,7 +14,7 @@ local indexOf = framework.table.indexOf
 local pack = framework.util.pack
 
 local params = framework.params
-params.pollInterval = params.pollInterval and tonumber(params.pollInterval)*1000 or 1000
+params.pollInterval = params.pollSeconds and tonumber(params.pollSeconds)*1000 or 1000
 params.name = 'Boundary Plugin HAProxy'
 params.version = '2.0'
 params.tags = 'haproxy'
@@ -82,46 +82,63 @@ local ds = WebRequestDataSource:new(options)
 local plugin = Plugin:new(params, ds)
 function plugin:onParseValues(data)
   local result = {}
-p(data)
+  result['HAPROXY_REQUESTS_QUEUED'] = {}
+  result['HAPROXY_REQUESTS_QUEUE_LIMIT'] = {}
+  result['HAPROXY_REQUESTS_HANDLED'] = {}
+  result['HAPROXY_REQUESTS_ABORTED_BY_CLIENT'] = {}
+  result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'] = {}
+  result['HAPROXY_SESSIONS'] = {}
+  result['HAPROXY_SESSION_LIMIT'] = {}
+  result['HAPROXY_BYTES_IN'] = {}
+  result['HAPROXY_BYTES_OUT'] = {}
+  result['HAPROXY_WARNINGS'] = {}
+  result['HAPROXY_ERRORS'] = {}
+  result['HAPROXY_FAILED_HEALTH_CHECKS'] = {}
+  result['HAPROXY_DOWNTIME_SECONDS'] = {}
+  result['HAPROXY_1XX_RESPONSES'] = {}
+  result['HAPROXY_2XX_RESPONSES'] = {}
+  result['HAPROXY_3XX_RESPONSES'] = {}
+  result['HAPROXY_4XX_RESPONSES'] = {}
+  result['HAPROXY_5XX_RESPONSES'] = {}
+  result['HAPROXY_OTHER_RESPONSES'] = {}
   local parsed = parseCSV(data, ',', '#', 1)
   for i, v in ipairs(parsed) do
     if v.svname == 'FRONTEND' or v.svname == 'BACKEND' then
       if not params.proxies or #params.proxies == 0 or (#params.proxies == 1 and params.proxies[1] == "") or indexOf(params.proxies, v.pxname) then
-        local acc = cache:get(v.pxname) 
         local name = v.pxname
         local alias = self.source .. '-' .. name
+        local acc = cache:get(alias) 
 
-p(alias)
         local queue_usage   = (v.qcur and not v.qlimit == "") and (v.qcur / v.qlimit) or 0.0 -- Percentage of queue usage.
         local sessions_usage = (v.scur and v.slim) and (v.scur / v.slim) or 0.0 -- Percentage of session usage.
         local warnings     = acc:accumulate('warnings', v.wretr + v.wredis)
         local errors       = acc:accumulate('errors', v.ereq + v.econ + v.eresp)
         local downtime     = acc:accumulate('downtime', v.downtime) * 1000 -- downtime in milliseconds
 
-        result['HAPROXY_REQUESTS_QUEUED'] = pack(v.qcur, nil, alias) -- current queued requests
-        result['HAPROXY_REQUESTS_QUEUE_LIMIT'] = pack(queue_usage, nil, alias) -- queue_usage percentage 
+        table.insert(result['HAPROXY_REQUESTS_QUEUED'], pack(v.qcur, nil, alias)) -- current queued requests
+        table.insert(result['HAPROXY_REQUESTS_QUEUE_LIMIT'], pack(queue_usage, nil, alias)) -- queue_usage percentage 
 
-        result['HAPROXY_REQUESTS_HANDLED'] = pack(acc:accumulate('req_tot', v.req_tot or 0), nil, alias)
-        result['HAPROXY_REQUESTS_ABORTED_BY_CLIENT'] = pack(acc:accumulate('cli_abrt', v.cli_abrt or 0), nil, alias)
-        result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'] = pack(acc:accumulate('srv_abrt', v.srv_abrt or 0), nil, alias)
+        table.insert(result['HAPROXY_REQUESTS_HANDLED'], pack(acc:accumulate('req_tot', v.req_tot or 0), nil, alias))
+        table.insert(result['HAPROXY_REQUESTS_ABORTED_BY_CLIENT'], pack(acc:accumulate('cli_abrt', v.cli_abrt or 0), nil, alias))
+        table.insert(result['HAPROXY_REQUESTS_ABORTED_BY_SERVER'], pack(acc:accumulate('srv_abrt', v.srv_abrt or 0), nil, alias))
 
-        result['HAPROXY_SESSIONS'] = pack(v.scur, nil, alias)
-        result['HAPROXY_SESSION_LIMIT'] = pack(sessions_usage, nil, alias)  -- session_usage is a percentage
+        table.insert(result['HAPROXY_SESSIONS'], pack(v.scur, nil, alias))
+        table.insert(result['HAPROXY_SESSION_LIMIT'], pack(sessions_usage, nil, alias))  -- session_usage is a percentage
 
-        result['HAPROXY_BYTES_IN'] = pack(acc:accumulate('bin', v.bin), nil, alias)
-        result['HAPROXY_BYTES_OUT'] = pack(acc:accumulate('bout', v.bout), nil, alias)
+        table.insert(result['HAPROXY_BYTES_IN'], pack(acc:accumulate('bin', v.bin), nil, alias))
+        table.insert(result['HAPROXY_BYTES_OUT'], pack(acc:accumulate('bout', v.bout), nil, alias))
 
-        result['HAPROXY_WARNINGS'] = pack(warnings, nil, alias)
-        result['HAPROXY_ERRORS'] = pack(errors, nil, alias)
-        result['HAPROXY_FAILED_HEALTH_CHECKS'] = pack(acc:accumulate('chkfail', v.chkfail), nil, alias)
-        result['HAPROXY_DOWNTIME_SECONDS'] = pack(downtime, nil, alias)
+        table.insert(result['HAPROXY_WARNINGS'], pack(warnings, nil, alias))
+        table.insert(result['HAPROXY_ERRORS'], pack(errors, nil, alias))
+        table.insert(result['HAPROXY_FAILED_HEALTH_CHECKS'], pack(acc:accumulate('chkfail', v.chkfail), nil, alias))
+        table.insert(result['HAPROXY_DOWNTIME_SECONDS'], pack(downtime, nil, alias))
 
-        result['HAPROXY_1XX_RESPONSES'] = pack(acc:accumulate('hrsp_1xx', v.hrsp_1xx or 0), nil, alias)
-        result['HAPROXY_2XX_RESPONSES'] = pack(acc:accumulate('hrsp_2xx', v.hrsp_2xx or 0), nil, alias)
-        result['HAPROXY_3XX_RESPONSES'] = pack(acc:accumulate('hrsp_3xx', v.hrsp_3xx or 0), nil, alias)
-        result['HAPROXY_4XX_RESPONSES'] = pack(acc:accumulate('hrsp_4xx', v.hrsp_4xx or 0), nil, alias)
-        result['HAPROXY_5XX_RESPONSES'] = pack(acc:accumulate('hrsp_5xx', v.hrsp_5xx or 0), nil, alias)
-        result['HAPROXY_OTHER_RESPONSES'] = pack(acc:accumulate('hrsp_other', v.hrsp_other or 0), nil, alias)
+        table.insert(result['HAPROXY_1XX_RESPONSES'], pack(acc:accumulate('hrsp_1xx', v.hrsp_1xx or 0), nil, alias))
+        table.insert(result['HAPROXY_2XX_RESPONSES'], pack(acc:accumulate('hrsp_2xx', v.hrsp_2xx or 0), nil, alias))
+        table.insert(result['HAPROXY_3XX_RESPONSES'], pack(acc:accumulate('hrsp_3xx', v.hrsp_3xx or 0), nil, alias))
+        table.insert(result['HAPROXY_4XX_RESPONSES'], pack(acc:accumulate('hrsp_4xx', v.hrsp_4xx or 0), nil, alias))
+        table.insert(result['HAPROXY_5XX_RESPONSES'], pack(acc:accumulate('hrsp_5xx', v.hrsp_5xx or 0), nil, alias))
+        table.insert(result['HAPROXY_OTHER_RESPONSES'], pack(acc:accumulate('hrsp_other', v.hrsp_other or 0), nil, alias))
       end
     end
   end

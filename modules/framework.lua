@@ -713,7 +713,7 @@ function Plugin:initialize(params, dataSource)
     self.dataSource = dataSource
   end
 
-  self.source = params.source or os.hostname()
+  self.source = (params.source and params.source ~= "" and params.source) or os.hostname()
   self.version = params.version or '1.0'
   self.name = params.name or 'Boundary Plugin'
   self.tags = params.tags or ''
