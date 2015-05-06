@@ -121,26 +121,6 @@ function Emitter:propagate(eventName, target)
   return self
 end
 
-local ffi = require('ffi')
-
--- Added some missing function in the luvit > 2.0 release
-
---ffi.cdef [[
-  --int gethostname(char *name, unsigned int namelen);
-  --]]
-
---[[
-  --Return the hostname
-  --@param maxlen{integer,optional} defaults to 255
---]]
---function os.hostname (maxlen)
-  --maxlen = maxlen or 255
-  --local buf = ffi.new("uint8_t[?]", maxlen)
-  --local res = ffi.C.gethostname(buf, maxlen)
-  --assert(res == 0)
-  --return ffi.string(buf)
---end
-
 local encode_alphabet = {
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -422,25 +402,49 @@ function framework.string.jsonsplit(self)
   return outResults
 end
 
--- TODO: Convert split to a generator
-function framework.string.split(self, pattern)
-  if not self then
+function framework.string.gsplit(data, separator)
+  local pos = 1
+  local iter = function()
+    if not pos then -- stop the generator (maybe using stateless is a better option?)
+      return nil
+    end
+    local s, e = string.find(data, separator, pos) 
+    if s then
+      local part = string.sub(data, pos, s-1) 
+      pos = e + 1
+      return part
+    else
+      local part = string.sub(data, pos)
+      pos = nil  
+      return part
+    end
+  end
+  return iter, data, 1
+end
+local gsplit = framework.string.gsplit
+
+function framework.string.isplit(data, separator, func)
+  for part in gsplit(data, separator) do
+    func(part)
+  end
+end
+local isplit = framework.string.isplit
+
+function framework.string.split(data, separator)
+  if not data then
     return nil
   end
-  local outResults = {}
-  local theStart = 1
-  local theSplitStart, theSplitEnd = string.find(self, pattern, theStart)
-  while theSplitStart do
-    table.insert( outResults, string.sub( self, theStart, theSplitStart-1 ) )
-    theStart = theSplitEnd + 1
-    theSplitStart, theSplitEnd = string.find( self, pattern, theStart )
-  end
-  table.insert( outResults, string.sub( self, theStart ) )
-  return outResults
+  local result = {}
+  isplit(data, separator, function (part) table.insert(result, part) end) 
+  return result
 end
 local split = framework.string.split
 
-function framework.util.pack(value, timestamp, source)
+function framework.util.pack(metric, value, timestamp, source)
+  return { metric = metric, value = value, timestamp = timestamp, source = source }
+end
+
+function framework.util.packValue(value, timestamp, source)
   return { value = value, timestamp = timestamp, source = source }
 end
 
@@ -713,7 +717,7 @@ function Plugin:initialize(params, dataSource)
     self.dataSource = dataSource
   end
 
-  self.source = (params.source and params.source ~= "" and params.source) or os.hostname()
+  self.source = params.source or os.hostname()
   self.version = params.version or '1.0'
   self.name = params.name or 'Boundary Plugin'
   self.tags = params.tags or ''
@@ -780,8 +784,13 @@ function Plugin:onReport(metrics)
   -- metrics can be { metric = value }
   -- or {metric = {value, source}}
   -- or {metric = {{value, source}, {value, source}, {value, source}}
+  -- or {metric, value, source}
+  -- or {{metric, value, source, timestamp}}
   for metric, v in pairs(metrics) do
-    if type(v) ~= 'table' then
+    -- { { metric, value .. }, { metric, value .. } }
+    if type(metric) == 'number' then
+      print(self:format(v.metric, v.value, v.source, v.timestamp or currentTimestamp()))
+    elseif type(v) ~= 'table' then
       print(self:format(metric, v, self.source, currentTimestamp()))
     elseif type(v[1]) ~= 'table' and v.value then
       -- looking for { metric = { value, source, timestamp }}
@@ -1159,3 +1168,4 @@ framework.PollerCollection = PollerCollection
 framework.MeterDataSource = MeterDataSource
 
 return framework
+
