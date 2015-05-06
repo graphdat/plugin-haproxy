@@ -14,7 +14,7 @@ local indexOf = framework.table.indexOf
 local pack = framework.util.pack
 
 local params = framework.params
-params.pollInterval = params.pollSeconds and tonumber(params.pollSeconds)*1000 or 1000
+params.pollInterval = (params.pollSeconds and tonumber(params.pollSeconds)*1000) or params.pollInterval or 1000
 params.name = 'Boundary Plugin HAProxy'
 params.version = '2.0'
 params.tags = 'haproxy'
