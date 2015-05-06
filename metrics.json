@@ -1,0 +1,194 @@
+{
+    "result": [
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "The number of 1XX HTTP responses",
+            "displayName": "Haproxy 1XX Resp",
+            "displayNameShort": "ha-1XX-resp",
+            "isDisabled": 0,
+            "name": "HAPROXY_1XX_RESPONSES",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "the number of 2XX HTTP responses",
+            "displayName": "Haproxy 2XX Resp",
+            "displayNameShort": "ha-2XX-resp",
+            "isDisabled": 0,
+            "name": "HAPROXY_2XX_RESPONSES",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "the number of 3XX HTTP responses",
+            "displayName": "Haproxy 3XX Resp",
+            "displayNameShort": "ha-3XX-resp",
+            "isDisabled": 0,
+            "name": "HAPROXY_3XX_RESPONSES",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "the number of 4XX HTTP responses",
+            "displayName": "Haproxy 4XX Resp",
+            "displayNameShort": "ha-4XX-resp",
+            "isDisabled": 0,
+            "name": "HAPROXY_4XX_RESPONSES",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "the  number of 5XX HTTP responses",
+            "displayName": "Haproxy 5XX Resp",
+            "displayNameShort": "ha-5XX-resp",
+            "isDisabled": 0,
+            "name": "HAPROXY_5XX_RESPONSES",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "bytes in",
+            "displayName": "Haproxy Bytes In",
+            "displayNameShort": "ha-bytes-in",
+            "isDisabled": 0,
+            "name": "HAPROXY_BYTES_IN",
+            "unit": "bytecount"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "bytes out",
+            "displayName": "Haproxy Bytes Out",
+            "displayNameShort": "ha-bytes-out",
+            "isDisabled": 0,
+            "name": "HAPROXY_BYTES_OUT",
+            "unit": "bytecount"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "number of data transfers aborted by the client",
+            "displayName": "Haproxy Client Aborts",
+            "displayNameShort": "ha-client-aborts",
+            "isDisabled": 0,
+            "name": "HAPROXY_REQUESTS_ABORTED_BY_CLIENT",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "current sessions",
+            "displayName": "Haproxy Current Sessions",
+            "displayNameShort": "ha-current-sess",
+            "isDisabled": 0,
+            "name": "HAPROXY_SESSIONS",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "the number of seconds haproxy is down",
+            "displayName": "Haproxy Downtime",
+            "displayNameShort": "ha-down-secs",
+            "isDisabled": 0,
+            "name": "HAPROXY_DOWNTIME_SECONDS",
+            "unit": "duration"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "request errors + connection errors + response errors",
+            "displayName": "Haproxy Errors",
+            "displayNameShort": "ha-errors",
+            "isDisabled": 0,
+            "name": "HAPROXY_ERRORS",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "the number of failed health checks",
+            "displayName": "Haproxy Failed Health Checks",
+            "displayNameShort": "ha-failed-health",
+            "isDisabled": 0,
+            "name": "HAPROXY_FAILED_HEALTH_CHECKS",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "total number of HTTP requests handled",
+            "displayName": "Haproxy Handled Requests",
+            "displayNameShort": "ha-handled-reqs",
+            "isDisabled": 0,
+            "name": "HAPROXY_REQUESTS_HANDLED",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "http responses with other codes (protocol error)",
+            "displayName": "Haproxy Other Resp",
+            "displayNameShort": "ha-other-resp",
+            "isDisabled": 0,
+            "name": "HAPROXY_OTHER_RESPONSES",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "queue Limit",
+            "displayName": "Haproxy Queue Limit",
+            "displayNameShort": "ha-queue-limit",
+            "isDisabled": 0,
+            "name": "HAPROXY_REQUESTS_QUEUE_LIMIT",
+            "unit": "percent"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": " current queued requests",
+            "displayName": "Haproxy Queued Requests",
+            "displayNameShort": "ha-queued-reqa",
+            "isDisabled": 0,
+            "name": "HAPROXY_REQUESTS_QUEUED",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "number of data transfers aborted by the server",
+            "displayName": "Haproxy Server aborts",
+            "displayNameShort": "ha-server-aborts",
+            "isDisabled": 0,
+            "name": "HAPROXY_REQUESTS_ABORTED_BY_SERVER",
+            "unit": "number"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "session limit",
+            "displayName": "Haproxy Session Limit",
+            "displayNameShort": "ha-sess-limit",
+            "isDisabled": 0,
+            "name": "HAPROXY_SESSION_LIMIT",
+            "unit": "percent"
+        },
+        {
+            "defaultAggregate": "AVG",
+            "defaultResolutionMS": null,
+            "description": "retries + redispatched",
+            "displayName": "Haproxy Warnings",
+            "displayNameShort": "ha-warnings",
+            "isDisabled": 0,
+            "name": "HAPROXY_WARNINGS",
+            "unit": "number"
+        }
+    ]
+}
