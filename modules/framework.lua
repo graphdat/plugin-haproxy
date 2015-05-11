@@ -7,7 +7,7 @@
 ----
 ---- @author Gabriel Nicolas Avellaneda <avellaneda.gabriel@gmail.com>
 ---- @copyright Boundary.com 2015
----- @license Apache 2.0 
+---- @license Apache 2.0
 ---------------
 local Emitter = require('core').Emitter
 local Object = require('core').Object
@@ -408,14 +408,14 @@ function framework.string.gsplit(data, separator)
     if not pos then -- stop the generator (maybe using stateless is a better option?)
       return nil
     end
-    local s, e = string.find(data, separator, pos) 
+    local s, e = string.find(data, separator, pos)
     if s then
-      local part = string.sub(data, pos, s-1) 
+      local part = string.sub(data, pos, s-1)
       pos = e + 1
       return part
     else
       local part = string.sub(data, pos)
-      pos = nil  
+      pos = nil
       return part
     end
   end
@@ -435,7 +435,7 @@ function framework.string.split(data, separator)
     return nil
   end
   local result = {}
-  isplit(data, separator, function (part) table.insert(result, part) end) 
+  isplit(data, separator, function (part) table.insert(result, part) end)
   return result
 end
 local split = framework.string.split
@@ -478,7 +478,7 @@ function framework.table.create(keys, values)
   return result
 end
 
-function framework.util.parseValue(x) 
+function framework.util.parseValue(x)
   return tonumber(x) or (isEmpty(x) and 0) or tostring(x) or 0
 end
 local parseValue = framework.util.parseValue
@@ -491,6 +491,7 @@ end
 local map = framework.functional.map
 
 -- TODO: Convert this to a generator
+-- TODO: Use gsplit instead of split
 function framework.string.parseCSV(data, separator, comment, header)
   separator = separator or ','
   local parsed = {}
@@ -506,9 +507,9 @@ function framework.string.parseCSV(data, separator, comment, header)
         local values = split(v, separator)
         values = map(values, parseValue)
         if headers then
-          table.insert(parsed, framework.table.create(headers, values)) 
+          table.insert(parsed, framework.table.create(headers, values))
         else
-          table.insert(parsed, values) 
+          table.insert(parsed, values)
         end
       end
     end
@@ -519,6 +520,14 @@ end
 function framework.util.auth(username, password)
   return notEmpty(username) and notEmpty(password) and (username .. ':' .. password) or nil
 end
+
+-- Returns an string for a Boundary Meter event.
+-- @param type could be 'CRITICAL', 'ERROR', 'WARN', 'INFO'
+function framework.util.eventString(type, message, tags)
+  tags = tags or ''
+  return string.format('_bevent: %s |t:%s|tags:%s', message, type, tags)
+end
+local eventString = framework.util.eventString
 
 -- You can call framework.string() to export all functions to the string table to the global table for easy access.
 local function exportable(t)
@@ -648,10 +657,10 @@ function NetDataSource:fetch(context, callback)
     if callback then
       socket:once('data', function (data)
         callback(data)
-        socket:shutdown()
+        socket:done()
       end)
     else
-      socket:shutdown()
+      socket:done()
     end
   end)
   socket:on('error', function (err) self:emit('error', 'Socket error: ' .. err.message) end)
@@ -735,8 +744,44 @@ function Plugin:printInfo(msg)
   self:printEvent('info', msg)
 end
 
-function Plugin:printEvent(event, msg)
-  print("_bevent:" .. self.name .. " ".. msg .. ": version " .. self.version ..  concat("|t:" .. event ..  "|tags:lua,plugin", self.tags, ','))
+function Plugin:printWarn(msg)
+  self:printEvent('warn', msg)
+end
+
+function Plugin:printCritical(msg)
+  self:printEvent('critical', msg)
+end
+
+-- TODO: Add a unit test
+function framework.table.merge(t1, t2)
+  local output = clone(t1)
+  for k, v in pairs(t2) do
+    if type(k) == 'number' then
+      table.insert(output, v)
+    else
+      output[k] = v
+    end
+  end
+  return output
+end
+local merge = framework.table.merge
+
+function Plugin.formatMessage(name, version, msg)
+  return string.format('%s version %s: %s', name, version, msg)
+end
+
+function Plugin.formatTags(tags)
+  tags = tags or {}
+  if type(tags) == 'string' then
+    tags = split(tags, ',')
+  end
+  return table.concat(merge({'lua', 'plugin'}, tags), ',')
+end
+
+function Plugin:printEvent(eventType, msg)
+  msg = Plugin.formatMessage(self.name, self.version, msg)
+  tags = Plugin.formatTags(self.tags)
+  print(eventString(eventType, msg, tags))
 end
 
 function Plugin:_isPoller(poller)
@@ -971,11 +1016,11 @@ framework.Accumulator = Accumulator
 local PollerCollection = Emitter:extend()
 function PollerCollection:initialize(pollers)
   self.pollers = pollers or {}
-
 end
 
 function PollerCollection:add(poller)
   table.insert(self.pollers, poller)
+  poller:propagate('error', self)
 end
 
 function PollerCollection:run(callback)
@@ -987,7 +1032,6 @@ function PollerCollection:run(callback)
   for _,p in pairs(self.pollers) do
     p:run(callback)
   end
-
 end
 
 --- WebRequestDataSource Class
@@ -1147,8 +1191,10 @@ function MeterDataSource:fetch(context, callback)
     end
 
     local query_metric = parsed.result.query_metric
-    for i = 1, table.getn(query_metric), 3 do
-      table.insert(result, {metric = query_metric[i], value = query_metric[i+1], timestamp = query_metric[i+2]})
+    if query_metric then
+      for i = 1, table.getn(query_metric), 3 do
+        table.insert(result, {metric = query_metric[i], value = query_metric[i+1], timestamp = query_metric[i+2]})
+      end
     end
     callback(result)
   end
