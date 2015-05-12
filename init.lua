@@ -9,9 +9,10 @@ local parseCSV = framework.string.parseCSV
 local table = require('table')
 local indexOf = framework.table.indexOf 
 local pack = framework.util.pack
+local notEmpty = framework.string.notEmpty
 
 local params = framework.params
-params.pollInterval = params.pollInterval and tonumber(params.pollInterval)*1000 or 1000
+params.pollInterval = notEmpty(tonumber(params.pollInterval), 1000)
 params.name = 'Boundary Plugin HAProxy'
 params.version = '2.0'
 params.tags = 'haproxy'
@@ -80,7 +81,7 @@ local plugin = Plugin:new(params, ds)
 function plugin:onParseValues(data)
   local result = {} 
   local parsed = parseCSV(data, ',', '#', 1)
-  for i, v in ipairs(parsed) do
+  for _, v in ipairs(parsed) do
     if v.svname == 'FRONTEND' or v.svname == 'BACKEND' then
       if not params.proxies or #params.proxies == 0 or indexOf(params.proxies, v.pxname) then
         local acc = cache:get(v.pxname) 
